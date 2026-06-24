@@ -7,7 +7,7 @@ export default function Step4Confirm({ bookingData, handleFinalSubmit, prevStep,
 
   const formattedDate = session_date
     ? session_date.toLocaleDateString('en-CA') // YYYY-MM-DD format
-    : '';
+    : 'To be confirmed';
 
   return (
     <div>
@@ -19,7 +19,7 @@ export default function Step4Confirm({ bookingData, handleFinalSubmit, prevStep,
         <p><strong>Phone:</strong> {phone}</p>
         <p><strong>Session Type:</strong> {session_type}</p>
         <p><strong>Date:</strong> {formattedDate}</p>
-        <p><strong>Time:</strong> {session_time ? session_time.substring(0, 5) : ''}</p>
+        <p><strong>Time:</strong> {session_time ? session_time.substring(0, 5) : 'To be confirmed'}</p>
         <p><strong>Intake Notes:</strong> {intake_notes || 'None'}</p>
       </div>
 

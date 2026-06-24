@@ -66,44 +66,61 @@ export default function Step2DateTime({ bookingData, updateBooking, nextStep, pr
     updateBooking({ session_time: timeValue });
   };
 
-  const canProceed = bookingData.session_date && bookingData.session_time;
+  // Date and time are optional — counsellor will confirm scheduling with the client
+  const canProceed = true;
 
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Select Date & Time</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        You may select a preferred date and time, or skip this step — we will reach out to confirm scheduling with you.
+      </p>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Date *</label>
+        <label className="block text-sm font-medium mb-1">
+          Date <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
         <DatePicker
           selected={bookingData.session_date}
           onChange={handleDateChange}
           minDate={new Date()}
           dateFormat="yyyy-MM-dd"
           className="border p-2 rounded w-full"
-          placeholderText="Choose a date"
-          required
+          placeholderText="Choose a preferred date"
+          isClearable
         />
       </div>
 
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-1">Time *</label>
-        {loadingSlots ? (
+        <label className="block text-sm font-medium mb-1">
+          Time <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+
+        {!bookingData.session_date ? (
+          <p className="text-sm text-gray-400 mt-1">
+            Select a date above to see available time slots.
+          </p>
+        ) : loadingSlots ? (
           <p className="text-gray-500">Loading available times…</p>
         ) : (
           <div className="grid grid-cols-3 gap-2 mt-1">
             {timeSlots.map(({ label, value }) => {
               const shortValue = value.substring(0, 5);
               const isAvailable = availableSlots.includes(shortValue);
+              const isSelected = bookingData.session_time === value;
               return (
                 <button
                   key={value}
                   type="button"
                   disabled={!isAvailable}
-                  onClick={() => handleTimeSelect(value)}
+                  onClick={() =>
+                    // Clicking a selected slot deselects it
+                    handleTimeSelect(isSelected ? null : value)
+                  }
                   className={`p-2 border rounded transition-colors ${
                     !isAvailable
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : bookingData.session_time === value
+                      : isSelected
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'bg-white hover:bg-gray-100'
                   }`}
@@ -121,7 +138,9 @@ export default function Step2DateTime({ bookingData, updateBooking, nextStep, pr
           Back
         </Button>
         <Button onClick={nextStep} disabled={!canProceed} className="flex-1">
-          Next: Intake Notes
+          {bookingData.session_date
+            ? 'Next: Intake Notes'
+            : 'Skip & Continue'}
         </Button>
       </div>
     </div>
