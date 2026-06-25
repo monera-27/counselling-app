@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase-Client";
 
 // ---------------------------------------------------------------------------
@@ -24,30 +25,7 @@ const books = [
   "1 John", "2 John", "3 John", "Jude", "Revelation",
 ];
 
-// API.Bible book abbreviations (USFM standard)
-const BOOK_TO_USFM: Record<string, string> = {
-  "Genesis": "GEN", "Exodus": "EXO", "Leviticus": "LEV", "Numbers": "NUM",
-  "Deuteronomy": "DEU", "Joshua": "JOS", "Judges": "JDG", "Ruth": "RUT",
-  "1 Samuel": "1SA", "2 Samuel": "2SA", "1 Kings": "1KI", "2 Kings": "2KI",
-  "1 Chronicles": "1CH", "2 Chronicles": "2CH", "Ezra": "EZR", "Nehemiah": "NEH",
-  "Esther": "EST", "Job": "JOB", "Psalms": "PSA", "Proverbs": "PRO",
-  "Ecclesiastes": "ECC", "Song of Solomon": "SNG", "Isaiah": "ISA",
-  "Jeremiah": "JER", "Lamentations": "LAM", "Ezekiel": "EZK", "Daniel": "DAN",
-  "Hosea": "HOS", "Joel": "JOL", "Amos": "AMO", "Obadiah": "OBA",
-  "Jonah": "JON", "Micah": "MIC", "Nahum": "NAM", "Habakkuk": "HAB",
-  "Zephaniah": "ZEP", "Haggai": "HAG", "Zechariah": "ZEC", "Malachi": "MAL",
-  "Matthew": "MAT", "Mark": "MRK", "Luke": "LUK", "John": "JHN", "Acts": "ACT",
-  "Romans": "ROM", "1 Corinthians": "1CO", "2 Corinthians": "2CO",
-  "Galatians": "GAL", "Ephesians": "EPH", "Philippians": "PHP",
-  "Colossians": "COL", "1 Thessalonians": "1TH", "2 Thessalonians": "2TH",
-  "1 Timothy": "1TI", "2 Timothy": "2TI", "Titus": "TIT", "Philemon": "PHM",
-  "Hebrews": "HEB", "James": "JAS", "1 Peter": "1PE", "2 Peter": "2PE",
-  "1 John": "1JN", "2 John": "2JN", "3 John": "3JN", "Jude": "JUD",
-  "Revelation": "REV",
-};
 
-// API.Bible Amplified Bible ID
-const AMP_BIBLE_ID = "06125adad2d5898a-01";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,7 +45,7 @@ const VERSIONS: Record<Version, VersionMeta> = {
   amp: {
     label: "AMP",
     fullName: "Amplified Bible",
-    copyright: "© The Lockman Foundation. Used via API.Bible.",
+    copyright: "© The Lockman Foundation.",
   },
 };
 
@@ -97,84 +75,6 @@ interface StrongsDictionary {
 }
 
 // ---------------------------------------------------------------------------
-// External API helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Fetch a chapter from bible-api.com (supports KJV and ASV, public domain).
- */
-async function fetchFromBibleApi(
-  book: string,
-  chapter: number,
-  translation: "asv"
-): Promise<BibleVerse[]> {
-  const bookSlug = book.toLowerCase().replace(/\s+/g, "+");
-  const url = `https://bible-api.com/${bookSlug}+${chapter}?translation=${translation}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`bible-api.com error: ${res.status}`);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return (data.verses || []).map((v: Record<string, unknown>, i: number) => ({
-    id: i,
-    book: String(v.book_name),
-    chapter: Number(v.chapter),
-    verse: Number(v.verse),
-    text: String(v.text).trim(),
-  }));
-}
-
-/**
- * Fetch a chapter from API.Bible (Amplified Bible).
- * Requires NEXT_PUBLIC_BIBLE_API_KEY to be set.
- *
- * API.Bible returns plain text with verse numbers as [1], [2], etc.
- * We parse that into individual verse objects.
- */
-async function fetchFromApiBible(
-  book: string,
-  chapter: number
-): Promise<BibleVerse[]> {
-  const apiKey = process.env.NEXT_PUBLIC_BIBLE_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      "Amplified Bible requires a NEXT_PUBLIC_BIBLE_API_KEY environment variable. " +
-      "Get a free key at scripture.api.bible"
-    );
-  }
-
-  const usfm = BOOK_TO_USFM[book];
-  if (!usfm) throw new Error(`Unknown book: ${book}`);
-
-  const chapterId = `${usfm}.${chapter}`;
-  const url =
-    `https://api.scripture.api.bible/v1/bibles/${AMP_BIBLE_ID}/chapters/${chapterId}` +
-    `?content-type=text&include-verse-numbers=true&include-titles=false`;
-
-  const res = await fetch(url, { headers: { "api-key": apiKey } });
-  if (!res.ok) throw new Error(`API.Bible error: ${res.status}`);
-
-  const data = await res.json();
-  const rawText: string = data?.data?.content ?? "";
-
-  // API.Bible plain-text format: "[ 1 ] In the beginning..."
-  // Split on verse markers and reconstruct verse objects
-  const versePattern = /\[\s*(\d+)\s*\]/g;
-  const verses: BibleVerse[] = [];
-  const parts = rawText.split(versePattern);
-
-  // parts alternates: [prefix, verseNum, verseText, verseNum, verseText, ...]
-  for (let i = 1; i < parts.length - 1; i += 2) {
-    const verseNum = parseInt(parts[i], 10);
-    const text = (parts[i + 1] ?? "").replace(/\n+/g, " ").trim();
-    if (text) {
-      verses.push({ id: verseNum, book, chapter, verse: verseNum, text });
-    }
-  }
-
-  return verses;
-}
-
-// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -188,7 +88,7 @@ export default function Bible() {
   const [book, setBook] = useState("John");
   const [chapterNum, setChapterNum] = useState(1);
 
-  // Word search state (KJV only via Supabase)
+  // Word search state (all 3 versions via Supabase)
   const [searchWord, setSearchWord] = useState("");
   const [searchResults, setSearchResults] = useState<BibleVerse[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -235,6 +135,7 @@ export default function Bible() {
             .select("*")
             .eq("book", book)
             .eq("chapter", chapterNum)
+            .eq("version", "kjv")
             .order("verse", { ascending: true });
 
           if (error) throw error;
@@ -252,7 +153,17 @@ export default function Bible() {
           if (error) throw error;
           verses = data || [];
         } else if (version === "amp") {
-          verses = await fetchFromApiBible(book, chapterNum);
+          // Supabase — AMP data imported from amp_bible.csv
+          const { data, error } = await supabase
+            .from("bible_verses")
+            .select("*")
+            .eq("book", book)
+            .eq("chapter", chapterNum)
+            .eq("version", "amp")
+            .order("verse", { ascending: true });
+
+          if (error) throw error;
+          verses = data || [];
         }
 
         setChapter({ book_name: book, chapter: chapterNum, verses });
@@ -274,7 +185,7 @@ export default function Bible() {
     setSearchWord("");
   }, [version]);
 
-  // KJV + ASV word search via Supabase (AMP uses external API so not searchable)
+  // KJV, ASV, and AMP all searchable — all stored in Supabase
   const searchBible = async () => {
     if (!searchWord.trim()) return;
     setSearchLoading(true);
@@ -284,7 +195,7 @@ export default function Bible() {
       .from("bible_verses")
       .select("*")
       .ilike("text", `%${searchWord}%`)
-      .eq("version", version === "amp" ? "kjv" : version)
+      .eq("version", version)
       .order("book")
       .order("chapter")
       .order("verse");
@@ -423,7 +334,27 @@ export default function Bible() {
 
   return (
     <main style={{ padding: 40, maxWidth: 860, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 24 }}>Bible Reader</h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <h1 style={{ margin: 0 }}>Bible Reader</h1>
+        <Link
+          href="/bible/concordance"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 16px",
+            border: "1px solid #d1d5db",
+            borderRadius: 8,
+            color: "#374151",
+            textDecoration: "none",
+            fontSize: "0.9rem",
+            fontWeight: 500,
+            backgroundColor: "#fff",
+          }}
+        >
+          📖 Strong&apos;s Concordance
+        </Link>
+      </div>
 
       {/* ── Version Switcher ── */}
       <div
@@ -651,74 +582,57 @@ export default function Bible() {
 
       <hr style={{ margin: "48px 0", borderColor: "#eee" }} />
 
-      {/* ── Word Search (KJV + ASV via Supabase; AMP not searchable) ── */}
+      {/* ── Word Search (all 3 versions via Supabase) ── */}
       <h2 style={{ marginBottom: 8 }}>Word Search</h2>
 
-      {version === "amp" ? (
-        <div
+      <div style={{ marginBottom: 20, display: "flex", gap: 10 }}>
+        <input
+          value={searchWord}
+          onChange={(e) => setSearchWord(e.target.value)}
+          placeholder='Search word (e.g. "faith")'
+          onKeyDown={(e) => e.key === "Enter" && searchBible()}
+          style={{ padding: "8px 12px", width: 260, borderRadius: 6, border: "1px solid #ccc" }}
+        />
+        <button
+          onClick={searchBible}
+          disabled={searchLoading}
           style={{
-            padding: "14px 18px",
-            backgroundColor: "#f0f4ff",
-            borderRadius: 8,
-            border: "1px solid #c7d7fd",
-            color: "#3730a3",
-            fontSize: "0.9rem",
+            padding: "8px 18px",
+            backgroundColor: "#1a1a1a",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            cursor: searchLoading ? "not-allowed" : "pointer",
+            opacity: searchLoading ? 0.6 : 1,
           }}
         >
-          Word search is available for <strong>KJV</strong> and <strong>ASV</strong>. Switch versions above to search.
-        </div>
-      ) : (
+          {searchLoading ? "Searching..." : "Search"}
+        </button>
+      </div>
+
+      {!searchLoading && searchResults.length > 0 && (
         <>
-          <div style={{ marginBottom: 20, display: "flex", gap: 10 }}>
-            <input
-              value={searchWord}
-              onChange={(e) => setSearchWord(e.target.value)}
-              placeholder='Search word (e.g. "faith")'
-              onKeyDown={(e) => e.key === "Enter" && searchBible()}
-              style={{ padding: "8px 12px", width: 260, borderRadius: 6, border: "1px solid #ccc" }}
-            />
-            <button
-              onClick={searchBible}
-              disabled={searchLoading}
-              style={{
-                padding: "8px 18px",
-                backgroundColor: "#1a1a1a",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                cursor: searchLoading ? "not-allowed" : "pointer",
-                opacity: searchLoading ? 0.6 : 1,
-              }}
-            >
-              {searchLoading ? "Searching..." : "Search"}
-            </button>
-          </div>
-
-          {!searchLoading && searchResults.length > 0 && (
-            <>
-              <p style={{ marginBottom: 16 }}>
-                <strong>
-                  &ldquo;{searchWord}&rdquo; appears {searchResults.length} time
-                  {searchResults.length !== 1 ? "s" : ""} in the {VERSIONS[version].label}
-                </strong>
+          <p style={{ marginBottom: 16 }}>
+            <strong>
+              &ldquo;{searchWord}&rdquo; appears {searchResults.length} time
+              {searchResults.length !== 1 ? "s" : ""} in the {VERSIONS[version].label}
+            </strong>
+          </p>
+          <div>
+            {searchResults.map((verse) => (
+              <p key={verse.id} style={{ marginBottom: 10, lineHeight: 1.6 }}>
+                <strong style={{ color: "#444" }}>
+                  {verse.book} {verse.chapter}:{verse.verse}
+                </strong>{" "}
+                {verse.text}
               </p>
-              <div>
-                {searchResults.map((verse) => (
-                  <p key={verse.id} style={{ marginBottom: 10, lineHeight: 1.6 }}>
-                    <strong style={{ color: "#444" }}>
-                      {verse.book} {verse.chapter}:{verse.verse}
-                    </strong>{" "}
-                    {verse.text}
-                  </p>
-                ))}
-              </div>
-            </>
-          )}
-
-          {!searchLoading && searchResults.length === 0 && searchWord && (
-            <p style={{ color: "#666" }}>No verses found. Try a different word or phrase.</p>
-          )}
+            ))}
+          </div>
         </>
+      )}
+
+      {!searchLoading && searchResults.length === 0 && searchWord && (
+        <p style={{ color: "#666" }}>No verses found. Try a different word or phrase.</p>
       )}
     </main>
   );
