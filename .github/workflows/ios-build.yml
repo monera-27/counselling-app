@@ -1,0 +1,71 @@
+name: iOS Build
+
+# Runs on every push to main, or manually from the GitHub Actions tab
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest   # GitHub provides a free Mac runner for this
+
+    steps:
+      # ── 1. Check out your code ──────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js ──────────────────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # ── 3. Install npm dependencies ─────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Build Next.js as static export ───────────────────────────────
+      - name: Build Next.js (static export for Capacitor)
+        run: npm run build:mobile
+        env:
+          CAPACITOR_BUILD: "true"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+
+      # ── 5. Sync web build into the iOS native project ───────────────────
+      - name: Sync Capacitor → iOS
+        run: npx cap sync ios
+
+      # ── 6. Install CocoaPods (iOS dependency manager) ───────────────────
+      - name: Install CocoaPods
+        run: |
+          cd ios/App
+          pod install --repo-update
+
+      # ── 7. Build the iOS app ─────────────────────────────────────────────
+      # CODE_SIGNING_REQUIRED=NO — build only, no signing yet.
+      # When you're ready to submit to the App Store, add Fastlane
+      # or Apple's Xcode Cloud for signed builds.
+      - name: Build iOS (unsigned)
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath ${{ runner.temp }}/App.xcarchive \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      # ── 8. Upload the archive as an artifact ────────────────────────────
+      # Download this from the GitHub Actions run page to inspect the build.
+      - name: Upload iOS archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-archive
+          path: ${{ runner.temp }}/App.xcarchive
+          retention-days: 7

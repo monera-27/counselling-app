@@ -1,3 +1,5 @@
+export const dynamic = "force-static";
+
 import { createClient } from "@/lib/supabase-server";
 import { NextResponse } from "next/server";
 

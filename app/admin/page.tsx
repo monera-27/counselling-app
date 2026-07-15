@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-Client";
+import { apiUrl } from "@/lib/api";
 
 export default function Admin() {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -62,7 +63,7 @@ export default function Admin() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/update-booking", {
+      const res = await fetch(apiUrl("/api/update-booking"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status }),
@@ -75,7 +76,7 @@ export default function Admin() {
 
       if (status === "confirmed") {
         try {
-          await fetch("/api/send-confirmation-email", {
+          await fetch(apiUrl("/api/send-confirmation-email"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Living Renewal</string>
+    <string name="title_activity_main">Living Renewal</string>
+    <string name="package_name">com.livingrenewal.counselling</string>
+    <string name="custom_url_scheme">com.livingrenewal.counselling</string>
+</resources>

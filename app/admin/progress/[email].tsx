@@ -294,3 +294,12 @@ export default function NotesModal({ booking, onClose }: NotesModalProps) {
     </div>
   );
 }
+// ---------------------------------------------------------------------------
+// Required for Next.js static export (output: 'export').
+// Admin pages are fully client-side — no paths need pre-generating at build.
+// ---------------------------------------------------------------------------
+export async function generateStaticParams() {
+  return [];
+}
+
+export const dynamic = "force-static";

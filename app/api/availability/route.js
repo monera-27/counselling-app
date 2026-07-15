@@ -1,3 +1,4 @@
+export const dynamic = "force-static";  
 // app/api/availability/route.js
 import { createClient } from '@supabase/supabase-js';
 

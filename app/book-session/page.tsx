@@ -1,7 +1,8 @@
-// app/booking/page.tsx
+// app/book-session/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '@/lib/api';
 
 // ---------- Types ----------
 interface BookingData {
@@ -23,7 +24,7 @@ type StepProps = {
   isSubmitting?: boolean;
 };
 
-// ---------- Simple UI Components (no external deps) ----------
+// ---------- Simple UI Components ----------
 const Container = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${className}`} style={{ maxWidth: '80rem' }}>
     {children}
@@ -68,7 +69,7 @@ const Step1Details = ({ bookingData, updateBooking, nextStep }: StepProps) => {
   );
 };
 
-// ---------- Step 2: Date & Time (hardcoded slots for demo) ----------
+// ---------- Step 2: Date & Time ----------
 const Step2DateTime = ({ bookingData, updateBooking, nextStep, prevStep }: StepProps) => {
   const [selectedDate, setSelectedDate] = useState<string>(bookingData.session_date || '');
   const [selectedTime, setSelectedTime] = useState<string>(bookingData.session_time || '');
@@ -83,7 +84,9 @@ const Step2DateTime = ({ bookingData, updateBooking, nextStep, prevStep }: StepP
     setSelectedTime(time);
     updateBooking({ session_time: time });
   };
-  const isValid = selectedDate && selectedTime;
+
+  // Date and time are optional per requirements
+  const canProceed = true;
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -92,17 +95,27 @@ const Step2DateTime = ({ bookingData, updateBooking, nextStep, prevStep }: StepP
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold mb-4">Select Date & Time</h2>
+      <p className="text-sm text-gray-500">
+        You may select a preferred date and time, or skip — we will reach out to confirm scheduling with you.
+      </p>
       <input type="date" value={selectedDate} onChange={handleDateChange} min={minDate} className="w-full border p-2 rounded" />
       <div className="grid grid-cols-3 gap-2 mt-2">
         {timeSlots.map((time) => (
-          <button key={time} type="button" onClick={() => handleTimeSelect(time)} className={`p-2 border rounded ${selectedTime === time ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-100'}`}>
+          <button
+            key={time}
+            type="button"
+            onClick={() => handleTimeSelect(selectedTime === time ? '' : time)}
+            className={`p-2 border rounded ${selectedTime === time ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-100'}`}
+          >
             {time}
           </button>
         ))}
       </div>
       <div className="flex gap-3">
         <button onClick={prevStep} className="flex-1 border border-gray-300 py-2 rounded">Back</button>
-        <button onClick={nextStep} disabled={!isValid} className="flex-1 bg-blue-600 text-white py-2 rounded disabled:opacity-50">Continue</button>
+        <button onClick={nextStep} disabled={!canProceed} className="flex-1 bg-blue-600 text-white py-2 rounded disabled:opacity-50">
+          {selectedDate ? 'Continue' : 'Skip & Continue'}
+        </button>
       </div>
     </div>
   );
@@ -135,8 +148,8 @@ const Step4Confirm = ({ bookingData, handleFinalSubmit, prevStep, isSubmitting }
         <p><strong>Email:</strong> {bookingData.email}</p>
         <p><strong>Phone:</strong> {bookingData.phone}</p>
         <p><strong>Session Type:</strong> {bookingData.session_type}</p>
-        <p><strong>Date:</strong> {bookingData.session_date}</p>
-        <p><strong>Time:</strong> {bookingData.session_time}</p>
+        <p><strong>Date:</strong> {bookingData.session_date || 'To be confirmed'}</p>
+        <p><strong>Time:</strong> {bookingData.session_time || 'To be confirmed'}</p>
         <p><strong>Notes:</strong> {bookingData.intake_notes || '—'}</p>
       </div>
       <div className="flex gap-3">
@@ -149,7 +162,7 @@ const Step4Confirm = ({ bookingData, handleFinalSubmit, prevStep, isSubmitting }
   );
 };
 
-// ---------- Main Booking Flow Component ----------
+// ---------- Main Booking Flow ----------
 export default function BookingFlow() {
   const [step, setStep] = useState(1);
   const [bookingData, setBookingData] = useState<BookingData>({
@@ -191,7 +204,9 @@ export default function BookingFlow() {
     setIsSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/bookings', {
+      // apiUrl() prepends NEXT_PUBLIC_APP_URL so this works on both
+      // Vercel (relative path) and the mobile app (full URL).
+      const res = await fetch(apiUrl('/api/bookings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
@@ -202,7 +217,7 @@ export default function BookingFlow() {
       }
       const { paymentLink } = await res.json();
       localStorage.removeItem('bookingDraft');
-      window.location.href = paymentLink; // Redirect to Wave payment
+      window.location.href = paymentLink;
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -228,7 +243,6 @@ export default function BookingFlow() {
 
   return (
     <Container className="py-8">
-      {/* Step indicator */}
       <div className="mb-8">
         <div className="flex justify-between items-center">
           {[1, 2, 3, 4].map((i) => (
