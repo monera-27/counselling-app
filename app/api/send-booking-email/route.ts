@@ -1,5 +1,3 @@
-export const dynamic = "force-static";
-// app/api/send-booking-email/route.ts
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 

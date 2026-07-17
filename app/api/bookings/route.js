@@ -1,5 +1,3 @@
-export const dynamic = "force-static";
-// app/api/bookings/route.js
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request) {
