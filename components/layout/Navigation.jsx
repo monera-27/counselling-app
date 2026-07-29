@@ -6,7 +6,7 @@ const navItems = [
   { href: '/', label: 'Home' },
   { href: '/bible', label: 'Bible' },
   { href: '/resources', label: 'Resources' },
-  { href: '/booking', label: 'Book Session' },
+  { href: '/book-session', label: 'Book Session' },  // ✅ Fixed here
   { href: '/dashboard', label: 'Dashboard' },
 ];
 
