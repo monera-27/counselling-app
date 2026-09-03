@@ -1,0 +1,9 @@
+{
+  "appId": "com.livingrenewal.counselling",
+  "appName": "SoulCare",
+  "webDir": "public",
+  "server": {
+    "url": "https://counselling-app-alpha.vercel.app/",
+    "cleartext": true
+  }
+}

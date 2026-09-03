@@ -8,28 +8,37 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold text-primary-700">
-          ✝️ SoulCare
-        </Link>
+    <>
+      {/* ✅ BONUS 1: Glass morphism applied to the entire header */}
+      <header className="glass sticky top-0 z-50 border-b-2 border-gold dark:border-gold/60 shadow-lg">
+        <div className="container mx-auto px-4 py-3.5 flex justify-between items-center">
+          {/* Logo with hover effects (already included) */}
+          <Link href="/" className="flex items-center gap-2.5 no-underline group">
+            <span className="w-9 h-9 rounded-full border-2 border-gold flex items-center justify-center text-gold text-lg shrink-0 transition-all duration-200 group-hover:bg-gold/10 group-hover:scale-105 dark:border-gold/70">
+              ✝
+            </span>
+            <span className="font-serif text-xl font-bold text-cream tracking-wide transition-colors duration-200 group-hover:text-gold dark:text-gray-100 dark:group-hover:text-gold">
+              Living Renewal
+            </span>
+          </Link>
 
-        {/* Desktop navigation */}
-        <div className="hidden md:block">
-          <Navigation />
+          {/* Desktop navigation */}
+          <div className="hidden md:block">
+            <Navigation />
+          </div>
+
+          {/* ✅ BONUS 2: Mobile button with enhanced hover & scale effects */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden border border-gold rounded px-3 py-1.5 text-cream text-base cursor-pointer transition-all duration-200 hover:bg-gold/20 hover:scale-105 active:scale-95 dark:border-gold/60 dark:text-gray-200 dark:hover:bg-gold/10"
+          >
+            {isMenuOpen ? '✕' : '☰'}
+          </button>
         </div>
 
-        {/* Mobile menu button */}
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          {isMenuOpen ? '✕' : '☰'}
-        </button>
-      </div>
-
-      {/* Mobile menu drawer */}
-      <MobileMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-    </header>
+        {/* Mobile menu drawer */}
+        <MobileMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      </header>
+    </>
   );
 }

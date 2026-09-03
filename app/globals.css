@@ -1,68 +1,169 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
+   DESIGN TOKENS — Living Renewal palette + dark mode
+   ------------------------------------------------------------------ */
+:root {
+  /* Brand colors */
+  --navy:       #1C2B4B;
+  --navy-light: #2A3F6F;
+  --gold:       #C8A84B;
+  --gold-light: #D9BE78;
+  --cream:      #F5F0E6;
+  --cream-dark: #EDE6D6;
+  --teal:       #5E8A88;
+  --teal-light: #7AA8A6;
+  --white:      #FFFFFF;
+
+  /* Semantic tokens (light theme) */
+  --bg-body:         var(--cream);
+  --text-body:       var(--navy);
+  --heading-color:   var(--navy);
+  --link-color:      var(--teal);
+  --link-hover:      var(--navy);
+  --focus-ring:      var(--gold);
+  --selection-bg:    var(--gold-light);
+  --selection-text:  var(--navy);
+
+  --card-bg:         var(--white);
+  --card-border:     var(--cream-dark);
+  --card-shadow:     0 2px 8px rgba(28, 43, 75, 0.08);
+  --card-shadow-hov: 0 6px 20px rgba(28, 43, 75, 0.13);
+
+  --btn-primary-bg:    var(--navy);
+  --btn-primary-hover: var(--navy-light);
+  --btn-primary-text:  var(--white);
+  --btn-outline-border: var(--cream-dark);
+  --btn-outline-text:  var(--navy);
+  --btn-outline-hover: var(--cream);
+
+  --input-border:      var(--cream-dark);
+  --input-focus:       var(--teal);
+  --input-shadow:      rgba(94, 138, 136, 0.15);
+
+  --verse-number:      var(--gold);
+  --verse-highlight:   rgba(200, 168, 75, 0.18);
+}
+
+/* Dark theme – applied via .dark class (Tailwind’s strategy) */
+.dark {
+  --bg-body:         #121826;          /* deep navy‑gray */
+  --text-body:       #E8E2D9;          /* light cream */
+  --heading-color:   #E8E2D9;
+  --link-color:      var(--gold-light);
+  --link-hover:      var(--gold);
+  --focus-ring:      var(--gold-light);
+  --selection-bg:    var(--gold);
+  --selection-text:  var(--navy);
+
+  --card-bg:         #1E2A3A;
+  --card-border:     #2A3F6F;
+  --card-shadow:     0 2px 8px rgba(0, 0, 0, 0.3);
+  --card-shadow-hov: 0 6px 20px rgba(0, 0, 0, 0.5);
+
+  --btn-primary-bg:    var(--gold);
+  --btn-primary-hover: var(--gold-light);
+  --btn-primary-text:  var(--navy);
+  --btn-outline-border: #4A5568;
+  --btn-outline-text:  #E8E2D9;
+  --btn-outline-hover: rgba(255,255,255,0.08);
+
+  --input-border:      #3A4A5A;
+  --input-focus:       var(--gold-light);
+  --input-shadow:      rgba(200, 168, 75, 0.2);
+
+  --verse-number:      var(--gold-light);
+  --verse-highlight:   rgba(200, 168, 75, 0.25);
+}
+
+/* ------------------------------------------------------------------
    BASE LAYER – element defaults, typography, accessibility
    ------------------------------------------------------------------ */
 @layer base {
-  /* Optional: add a Google Font later – replace this with your font stack */
-  body {
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  /* Smooth scrolling for anchor links (modern browsers) */
   html {
     scroll-behavior: smooth;
   }
 
-  /* Better text selection */
-  ::selection {
-    @apply bg-blue-200 dark:bg-blue-800 text-gray-900 dark:text-white;
+  body {
+    background-color: var(--bg-body);
+    color: var(--text-body);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.3s, color 0.3s;
   }
 
-  /* Headings */
+  /* Headings – all use the brand navy (or light in dark) */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--heading-color);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transition: color 0.3s;
+  }
   h1 {
-    @apply text-3xl md:text-4xl font-bold tracking-tight;
+    font-size: 2.5rem;
+    line-height: 1.15;
   }
   h2 {
-    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+    font-size: 1.875rem;
+    line-height: 1.25;
   }
   h3 {
-    @apply text-xl md:text-2xl font-semibold;
-  }
-  h4 {
-    @apply text-lg font-medium;
+    font-size: 1.375rem;
+    line-height: 1.35;
   }
 
-  /* Accessible focus ring – visible on keyboard navigation only */
+  /* Gold underline for h2 – signature style */
+  h2.gold-underline {
+    display: inline-block;
+    border-bottom: 2px solid var(--gold);
+    padding-bottom: 4px;
+  }
+
+  ::selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-text);
+  }
+
   :focus-visible {
-    @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950;
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
   }
 
-  /* Default link styling */
+  /* Links without a class */
   a:not([class]) {
-    @apply text-blue-600 underline decoration-transparent transition-colors duration-200;
-    text-decoration-thickness: 0.1em;
+    color: var(--link-color);
+    text-decoration: underline;
     text-underline-offset: 0.2em;
+    transition: color 0.2s;
   }
   a:not([class]):hover {
-    @apply decoration-blue-600 dark:text-blue-400 dark:decoration-blue-400;
+    color: var(--link-hover);
   }
 
-  /* Mobile tap targets: bigger touch area without breaking layout */
+  /* Form elements */
+  input, select, textarea {
+    background-color: var(--card-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    color: var(--text-body);
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 3px var(--input-shadow);
+  }
+
+  /* Mobile tap targets (from main code) */
   @media (max-width: 640px) {
-    button,
-    a,
-    [role="button"],
-    input,
-    select,
-    textarea,
-    input[type="date"],
-    input[type="time"] {
-      @apply min-h-[44px];
+    button, a, [role="button"], input, select, textarea,
+    input[type="date"], input[type="time"] {
+      min-height: 44px;
     }
-    /* prevent squashing on inline elements */
     a, [role="button"] {
       display: inline-flex;
       align-items: center;
@@ -74,68 +175,205 @@
    COMPONENTS LAYER – reusable UI blocks
    ------------------------------------------------------------------ */
 @layer components {
-  /* Responsive container – use <div class="container"> */
+  /* Responsive container */
   .container {
-    @apply mx-auto px-4 sm:px-6 lg:px-8;
-    max-width: 80rem; /* 1280px – typical XL breakpoint */
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    max-width: 80rem; /* 1280px */
+  }
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2.5rem;
+      padding-right: 2.5rem;
+    }
   }
 
-  /* Card component for verses, notes, articles */
+  /* Card */
   .card {
-    @apply bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 md:p-6 transition-shadow;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--card-border);
+    transition: box-shadow 0.2s, background-color 0.3s, border-color 0.3s;
+    padding: 1.5rem;
+    overflow: hidden;
   }
   .card:hover {
-    @apply shadow-md;
+    box-shadow: var(--card-shadow-hov);
+  }
+  /* Card with gold top accent */
+  .card-accent {
+    border-top: 3px solid var(--gold);
   }
 
-  /* Base button styles (extend with .btn-primary, .btn-outline etc.) */
+  /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed;
-    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Georgia', serif;
+    font-weight: 600;
+    border-radius: 4px;
+    transition: all 0.2s;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    min-height: 2.75rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 0.9rem;
+    border: none;
+    background-color: transparent;
+    color: var(--text-body);
   }
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600;
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+  }
+  .btn-primary:hover {
+    background-color: var(--btn-primary-hover);
   }
   .btn-outline {
-    @apply border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800;
+    border: 1px solid var(--btn-outline-border);
+    color: var(--btn-outline-text);
+  }
+  .btn-outline:hover {
+    background-color: var(--btn-outline-hover);
+  }
+  /* Gold border variant (like modified code) */
+  .btn-gold {
+    border: 2px solid var(--gold);
+    color: var(--heading-color);
+  }
+  .btn-gold:hover {
+    background-color: var(--gold);
+    color: var(--white);
+  }
+  /* Teal variant */
+  .btn-teal {
+    background-color: var(--teal);
+    color: var(--white);
+  }
+  .btn-teal:hover {
+    background-color: var(--teal-light);
+  }
+
+  /* Section backgrounds (optional) */
+  .section-navy {
+    background-color: var(--navy);
+    color: var(--text-light);
+  }
+  .section-navy h1,
+  .section-navy h2,
+  .section-navy h3 {
+    color: var(--text-light);
+  }
+  .section-teal {
+    background-color: var(--teal);
+    color: var(--text-light);
+  }
+  .section-teal h1,
+  .section-teal h2,
+  .section-teal h3 {
+    color: var(--text-light);
+  }
+  .section-cream {
+    background-color: var(--cream);
+  }
+
+  /* Gold divider */
+  .divider-gold {
+    width: 60px;
+    height: 2px;
+    background-color: var(--gold);
+    margin: 12px 0 24px;
+  }
+  .divider-gold-center {
+    width: 60px;
+    height: 2px;
+    background-color: var(--gold);
+    margin: 12px auto 24px;
+  }
+
+  /* Form labels */
+  .field-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-mid);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: system-ui, sans-serif;
   }
 
   /* Bible text styles */
   .prose-bible {
-    @apply leading-relaxed text-gray-700 dark:text-gray-300;
-    line-height: 1.75;
-    hyphens: auto;
-    word-break: break-word;
+    line-height: 1.85;
+    color: var(--text-body);
+    font-family: 'Georgia', serif;
+    font-size: 1.05rem;
   }
-
-  /* Verse number – inline, no line break, subtle */
   .verse-number {
-    @apply text-xs text-gray-400 mr-2 select-none inline-block align-baseline;
-    font-feature-settings: "tnum";
+    font-size: 0.75rem;
+    color: var(--verse-number);
+    margin-right: 6px;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
+    font-family: system-ui, sans-serif;
   }
-
-  /* Optional: highlight for current verse */
   .verse-highlight {
-    @apply bg-yellow-100 dark:bg-yellow-900/40 rounded px-0.5 transition-colors;
+    background-color: var(--verse-highlight);
+    border-radius: 3px;
+    padding: 0 2px;
   }
 }
 
 /* ------------------------------------------------------------------
-   UTILITIES LAYER – custom, one-off helpers
+   UTILITIES LAYER – custom helpers & glass morphism
    ------------------------------------------------------------------ */
 @layer utilities {
-  /* Smooth scroll offset for fixed headers (e.g., anchor links) */
+  /* Scroll margin for fixed headers */
   .scroll-mt-header {
-    scroll-margin-top: 5rem; /* adjust to your header height */
+    scroll-margin-top: 5rem;
   }
 
-  /* Custom text shadow (e.g., for hero titles) */
-  .text-shadow-sm {
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
+  /* Colour utilities (brand colours) */
+  .text-navy  { color: var(--navy); }
+  .text-gold  { color: var(--gold); }
+  .text-teal  { color: var(--teal); }
+  .text-cream { color: var(--cream); }
+  .bg-navy    { background-color: var(--navy); }
+  .bg-gold    { background-color: var(--gold); }
+  .bg-teal    { background-color: var(--teal); }
+  .bg-cream   { background-color: var(--cream); }
+  .border-gold { border-color: var(--gold); }
+  .border-teal { border-color: var(--teal); }
+  .border-navy { border-color: var(--navy); }
+
+  /* Glass morphism */
+  .glass {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+  }
+  /* Dark mode glass – lighter border, stronger blur */
+  .dark .glass {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
-  /* Hide scrollbar but keep functionality (for clean verse lists) */
+  /* Hide scrollbar but keep functionality */
   .scrollbar-none {
     scrollbar-width: none;
     -ms-overflow-style: none;
