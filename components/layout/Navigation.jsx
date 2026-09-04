@@ -30,7 +30,7 @@ export default function Navigation() {
               isActive
                 ? 'text-gold border-gold font-bold'
                 : // Inactive: cream text, transparent underline, hover gold
-                  'text-cream border-transparent hover:text-gold hover:border-gold/50'
+                  'text-navy border-transparent hover:text-gold hover:border-gold/50'
             )}
           >
             {item.label}

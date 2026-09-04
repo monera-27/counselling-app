@@ -1,0 +1,122 @@
+# Bible local-data fix for VS Code
+
+This patch updates both Bible implementations so KJV, ASV, and AMP chapter data and word search use the bundled JSON files rather than Supabase or `/bible/*.json` URL requests.
+
+## Files required
+
+The following files must already exist in the repository:
+
+- `public/bible/kjv.json`
+- `public/bible/asv.json`
+- `public/bible/amp.json`
+- `app/bible/page.tsx`
+- `public/bible/bible_page.tsx`
+
+## Apply the patch in VS Code
+
+1. Open the repository folder in VS Code.
+2. Copy `counselling-bible-local.patch` into the repository root.
+3. Open the VS Code terminal and run:
+
+```bash
+git apply counselling-bible-local.patch
+```
+
+4. Verify the changes:
+
+```bash
+npx tsc --noEmit
+git diff --check
+```
+
+## Core code added to both Bible components
+
+```tsx
+import kjvData from "@/public/bible/kjv.json";
+import asvData from "@/public/bible/asv.json";
+import ampData from "@/public/bible/amp.json";
+
+type BibleData = Record<string, Record<string, { v: number; t: string }[]>>;
+
+const LOCAL_BIBLE_DATA: Record<Version, BibleData> = {
+  kjv: kjvData as BibleData,
+  asv: asvData as BibleData,
+  amp: ampData as BibleData,
+};
+```
+
+## Chapter loading used by the active route
+
+In `app/bible/page.tsx`, the chapter effect should read from `LOCAL_BIBLE_DATA` like this:
+
+```tsx
+useEffect(() => {
+  setChapterLoading(true);
+  setChapterError(null);
+  setHighlightedVerse(null);
+  setNote("");
+
+  try {
+    const rawVerses = LOCAL_BIBLE_DATA[version]?.[book]?.[String(chapterNum)];
+    if (!rawVerses || rawVerses.length === 0) {
+      throw new Error("Chapter not found in bundled Bible data.");
+    }
+
+    const verses: BibleVerse[] = rawVerses.map((verse, index) => ({
+      id: index,
+      book,
+      chapter: chapterNum,
+      verse: verse.v,
+      text: verse.t,
+    }));
+
+    setChapter({ book_name: book, chapter: chapterNum, verses });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to load chapter.";
+    setChapterError(message);
+    setChapter(null);
+  } finally {
+    setChapterLoading(false);
+  }
+}, [book, chapterNum, version]);
+```
+
+## Local word search
+
+The active route should search the selected bundled data instead of calling `.from("bible_verses")`:
+
+```tsx
+const searchBible = async () => {
+  if (!searchWord.trim()) return;
+  setSearchLoading(true);
+  setSearchResults([]);
+
+  try {
+    const word = searchWord.trim().toLowerCase();
+    const results: BibleVerse[] = [];
+    const bibleData = LOCAL_BIBLE_DATA[version];
+
+    for (const [bookName, chapters] of Object.entries(bibleData)) {
+      for (const [chapter, verses] of Object.entries(chapters)) {
+        for (const verse of verses) {
+          if (verse.t.toLowerCase().includes(word)) {
+            results.push({
+              id: results.length,
+              book: bookName,
+              chapter: Number(chapter),
+              verse: verse.v,
+              text: verse.t,
+            });
+          }
+        }
+      }
+    }
+
+    setSearchResults(results);
+  } finally {
+    setSearchLoading(false);
+  }
+};
+```
+
+Supabase can remain imported for saving favorites and devotional notes. It is no longer used for reading Bible chapters or searching Bible text.

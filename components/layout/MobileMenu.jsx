@@ -32,7 +32,7 @@ export default function MobileMenu({ isOpen, onClose }) {
                 ${
                   isActive
                     ? 'text-gold bg-gold/10 border-gold font-semibold'
-                    : 'text-cream border-transparent hover:text-gold hover:bg-gold/5'
+                    : 'text-navy border-transparent hover:text-gold hover:bg-gold/5'
                 }
               `}
             >

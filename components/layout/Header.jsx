@@ -17,7 +17,7 @@ export default function Header() {
             <span className="w-9 h-9 rounded-full border-2 border-gold flex items-center justify-center text-gold text-lg shrink-0 transition-all duration-200 group-hover:bg-gold/10 group-hover:scale-105 dark:border-gold/70">
               ✝
             </span>
-            <span className="font-serif text-xl font-bold text-cream tracking-wide transition-colors duration-200 group-hover:text-gold dark:text-gray-100 dark:group-hover:text-gold">
+            <span className="font-serif text-xl font-bold text-navy tracking-wide transition-colors duration-200 group-hover:text-gold dark:text-navy-100 dark:group-hover:text-gold">
               Living Renewal
             </span>
           </Link>
