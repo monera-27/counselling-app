@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-Client";
+import kjvData from "@/public/bible/kjv.json";
+import asvData from "@/public/bible/asv.json";
+import ampData from "@/public/bible/amp.json";
 
 // ---------------------------------------------------------------------------
 // Constants
