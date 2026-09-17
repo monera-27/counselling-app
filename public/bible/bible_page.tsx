@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-Client";
+
+// ✅ Import JSON directly (no fetch needed)
 import kjvData from "@/public/bible/kjv.json";
 import asvData from "@/public/bible/asv.json";
 import ampData from "@/public/bible/amp.json";
@@ -72,9 +74,15 @@ interface StrongsDictionary {
 }
 
 // ---------------------------------------------------------------------------
-// Local JSON Bible cache — avoids re-fetching the same file repeatedly
+// 🚀 THE KEY CHANGE: Use imported data directly
 // ---------------------------------------------------------------------------
-const bibleCache: Partial<Record<Version, Record<string, Record<string, { v: number; t: string }[]>>>> = {};
+type BibleData = Record<string, Record<string, { v: number; t: string }[]>>;
+
+const LOCAL_BIBLE_DATA: Record<Version, BibleData> = {
+  kjv: kjvData as BibleData,
+  asv: asvData as BibleData,
+  amp: ampData as BibleData,
+};
 
 // ---------------------------------------------------------------------------
 // Component
@@ -99,18 +107,6 @@ export default function Bible() {
   const [strongsDict, setStrongsDict] = useState<StrongsDictionary | null>(null);
   const [strongsLoading, setStrongsLoading] = useState(true);
 
-  // ---------------------------------------------------------------------------
-  // Load the local JSON for a given version (with in-memory cache)
-  // ---------------------------------------------------------------------------
-  const loadBibleData = async (v: Version) => {
-    if (bibleCache[v]) return bibleCache[v]!;
-    const res = await fetch(`/bible/${v}.json`);
-    if (!res.ok) throw new Error(`Could not load ${VERSIONS[v].fullName} data.`);
-    const data = await res.json();
-    bibleCache[v] = data;
-    return data;
-  };
-
   // Load Strong's dictionary once on mount
   useEffect(() => {
     fetch("/strongs.json")
@@ -121,42 +117,45 @@ export default function Bible() {
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Fetch chapter from local JSON (works offline, no Supabase needed)
+  // 📖 Load chapter from LOCAL_BIBLE_DATA (no fetch, no cache)
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    const fetchChapter = async () => {
-      setChapterLoading(true);
-      setChapterError(null);
-      setHighlightedVerse(null);
-      setNote("");
+    setChapterLoading(true);
+    setChapterError(null);
+    setHighlightedVerse(null);
+    setNote("");
 
-      try {
-        const bibleData = await loadBibleData(version);
-        const rawVerses = bibleData?.[book]?.[String(chapterNum)] as { v: number; t: string }[] | undefined;
+    try {
+      // DEBUG: Log what we're trying to load
+      console.log("🔍 Loading:", { version, book, chapter: chapterNum });
+      console.log("📦 LOCAL_BIBLE_DATA[version] exists?", !!LOCAL_BIBLE_DATA[version]);
+      console.log("📦 Book data:", LOCAL_BIBLE_DATA[version]?.[book] ? "found" : "not found");
+      console.log("📦 Chapter data:", LOCAL_BIBLE_DATA[version]?.[book]?.[String(chapterNum)] ? "found" : "not found");
 
-        if (!rawVerses || rawVerses.length === 0) {
-          throw new Error("Chapter not found in local data.");
-        }
+      const bibleData = LOCAL_BIBLE_DATA[version];
+      const rawVerses = bibleData?.[book]?.[String(chapterNum)];
 
-        const verses: BibleVerse[] = rawVerses.map((v: { v: number; t: string }, i: number) => ({
-          id: i,
-          book,
-          chapter: chapterNum,
-          verse: v.v,
-          text: v.t,
-        }));
-
-        setChapter({ book_name: book, chapter: chapterNum, verses });
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Failed to load chapter.";
-        setChapterError(message);
-        setChapter(null);
-      } finally {
-        setChapterLoading(false);
+      if (!rawVerses || rawVerses.length === 0) {
+        throw new Error(`Chapter ${chapterNum} not found in ${book} (${version})`);
       }
-    };
 
-    fetchChapter();
+      const verses: BibleVerse[] = rawVerses.map((v, i) => ({
+        id: i,
+        book,
+        chapter: chapterNum,
+        verse: v.v,
+        text: v.t,
+      }));
+
+      setChapter({ book_name: book, chapter: chapterNum, verses });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load chapter.";
+      console.error("❌ Error:", message);
+      setChapterError(message);
+      setChapter(null);
+    } finally {
+      setChapterLoading(false);
+    }
   }, [book, chapterNum, version]);
 
   // Reset search when switching version
@@ -166,7 +165,7 @@ export default function Bible() {
   }, [version]);
 
   // ---------------------------------------------------------------------------
-  // Word search — runs locally over bundled JSON (works offline)
+  // 🔍 Word search – runs locally over LOCAL_BIBLE_DATA
   // ---------------------------------------------------------------------------
   const searchBible = async () => {
     if (!searchWord.trim()) return;
@@ -174,14 +173,11 @@ export default function Bible() {
     setSearchResults([]);
 
     try {
-      const bibleData = await loadBibleData(version);
+      const bibleData = LOCAL_BIBLE_DATA[version];
       const word = searchWord.trim().toLowerCase();
       const results: BibleVerse[] = [];
 
-      for (const [bookName, chapters] of Object.entries(bibleData) as [
-        string,
-        Record<string, { v: number; t: string }[]>
-      ][]) {
+      for (const [bookName, chapters] of Object.entries(bibleData)) {
         for (const [chap, verses] of Object.entries(chapters)) {
           for (const v of verses) {
             if (v.t.toLowerCase().includes(word)) {
@@ -197,6 +193,7 @@ export default function Bible() {
         }
       }
 
+      console.log(`🔍 Found ${results.length} verses containing "${searchWord}"`);
       setSearchResults(results);
     } catch (err) {
       console.error("Search error:", err);
@@ -206,7 +203,7 @@ export default function Bible() {
   };
 
   // ---------------------------------------------------------------------------
-  // Save verse to favorites (still uses Supabase — needs login)
+  // ⭐ Save verse to favorites (still uses Supabase)
   // ---------------------------------------------------------------------------
   const saveFavorite = async (verse: BibleVerse) => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -230,7 +227,7 @@ export default function Bible() {
   };
 
   // ---------------------------------------------------------------------------
-  // Save devotional note (still uses Supabase — needs login)
+  // 📝 Save devotional note (still uses Supabase)
   // ---------------------------------------------------------------------------
   const saveNote = async () => {
     if (!highlightedVerse) return;
@@ -256,7 +253,7 @@ export default function Bible() {
   };
 
   // ---------------------------------------------------------------------------
-  // Render verse text with Strong's tooltips (KJV only)
+  // ✏️ Render verse text with Strong's tooltips (KJV only)
   // ---------------------------------------------------------------------------
   const renderVerseText = (text: string): React.ReactNode[] => {
     if (!strongsDict || version !== "kjv") return [text];
